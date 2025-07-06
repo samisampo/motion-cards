@@ -9,6 +9,7 @@ interface PortraitProps {
 	size?: "small" | "medium" | "large"
 	showGlare?: boolean
 	glareMaskSrc?: string
+	rainbowMaskSrc?: string
 }
 
 export function Portrait({
@@ -17,6 +18,7 @@ export function Portrait({
 	size = "medium",
 	showGlare = true,
 	glareMaskSrc = "",
+	rainbowMaskSrc = "",
 }: PortraitProps) {
 	const sizeClasses = {
 		small: "w-16 h-16",
@@ -130,17 +132,39 @@ export function Portrait({
 			{/* Glare/Shine Effect */}
 			{showGlare && glareMaskSrc && (
 				<motion.div
-					className="absolute inset-0 pointer-events-none z-20"
+					className={`absolute inset-0 pointer-events-none z-20 ${
+						rainbowMaskSrc ? "rainbow-glare" : ""
+					}`}
 					animate={{
-						backgroundImage: `radial-gradient(circle at ${transform.glareX}% ${transform.glareY}%, #fff 5%, #000 50%, #fff 80% ), linear-gradient( -45deg, #000 15%, #fff, #000 85% ), url(${glareMaskSrc})`,
+						backgroundImage: ` url(${glareMaskSrc}),  url(${glareMaskSrc}), radial-gradient( farthest-corner circle at ${transform.glareX}% ${transform.glareY}%, hsla(150, 20%, 10%, 1) 10%, hsla(177, 22%, 80%, 0.1) 50%, hsla(0, 0%, 95%, .98) 90% )`,
 						opacity: `calc((1.5 * ${transform.glareOpacity}) - ${calcPointerFromCenter(transform.glareX, transform.glareY)})`,
-						backgroundPosition: `center center, calc(100% * ${transform.glareX / 100}) calc(100% * ${transform.glareY / 100}), center center`,
 					}}
 					style={{
-						backgroundBlendMode: "soft-light, difference",
-						backgroundSize: "120% 120%, 200% 200%, cover",
-						filter: "brightness(0.8) contrast(1.5) saturate(1)",
+						backgroundPosition: `40% 45%, 55% 55%, center center`,
+						backgroundBlendMode: "soft-light, color-burn",
+						backgroundSize: "25% 25%, 25% 25%, cover",
+						filter: "brightness(1) contrast(1) saturate(0.9)",
 						mixBlendMode: "color-dodge",
+						// @ts-ignore
+						"--rainbow-mask": `url(${rainbowMaskSrc})`,
+						"--background-x": `${transform.glareX}`,
+						"--background-y": `${transform.glareY}`,
+						"--pointer-from-center": `${calcPointerFromCenter(
+							transform.glareX,
+							transform.glareY,
+						)}`,
+						"--glare-mask": `url(${glareMaskSrc})`,
+						"--pointer-x": `${transform.glareX}`,
+						"--pointer-y": `${transform.glareY}`,
+						display: "grid",
+						gridArea: "1 / 1",
+						// ":before": {
+						// 	content: '""',
+						// 	position: "absolute",
+						// 	inset: 0,
+						// 	background:
+						// 		"repeating-linear-gradient(133deg, rgb(216, 117, 255) 5%, rgb(255, 122, 117) 10%, rgb(255, 237, 97) 15%, rgb(168, 255, 97) 20%, rgb(133, 255, 247) 25%, rgb(122, 149, 255) 30%, rgb(216, 117, 255) 35%)",
+						// },
 					}}
 				/>
 			)}

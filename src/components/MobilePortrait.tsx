@@ -5,7 +5,7 @@ import { clamp } from "../utils/math"
 interface PortraitProps {
 	name: string
 	imageSrc: string
-	size?: "small" | "medium" | "large"
+	size?: "small" | "medium" | "large" | "fullscreen"
 	showGlare?: boolean
 	glareMaskSrc?: string
 }
@@ -21,6 +21,7 @@ export function Portrait({
 		small: "w-16 h-16",
 		medium: "w-24 h-24",
 		large: "w-64 h-84",
+		fullscreen: "w-full h-full",
 	}
 
 	const ref = useRef<HTMLDivElement>(null)
@@ -48,13 +49,17 @@ export function Portrait({
 				// beta ranges from -180 to 180 (front-back tilt)
 				// gamma ranges from -90 to 90 (left-right tilt)
 
-				// Normalize and scale the values
-				const normalizedBeta = clamp(((beta + 180) / 360) * 100) // 0-100
-				const normalizedGamma = clamp(((gamma + 90) / 180) * 100) // 0-100
+				// Use smaller ranges for higher sensitivity
+				const clampedBeta = clamp(beta, -30, 30) // Reduced from full -180 to 180 range
+				const clampedGamma = clamp(gamma, -20, 20) // Reduced from full -90 to 90 range
 
-				// Calculate rotation (inverted for natural feel)
-				const rotateX = (normalizedBeta - 50) * 0.3 // Reduced sensitivity
-				const rotateY = (normalizedGamma - 50) * -0.5 // Reduced sensitivity
+				// Normalize and scale the values
+				const normalizedBeta = clamp(((clampedBeta + 30) / 60) * 100) // 0-100
+				const normalizedGamma = clamp(((clampedGamma + 20) / 40) * 100) // 0-100
+
+				// No rotation for mobile
+				const rotateX = 0
+				const rotateY = 0
 
 				setTransform({
 					rotateX,
@@ -100,29 +105,36 @@ export function Portrait({
 				transformStyle: "preserve-3d",
 				transformOrigin: "center center",
 			}}
-			className="portrait-container relative overflow-hidden rounded-lg touch-none"
+			className={`portrait-container relative overflow-hidden touch-none ${
+				size === "fullscreen" ? "w-full h-full" : "rounded-lg"
+			}`}
 		>
 			<motion.img
 				src={imageSrc}
 				alt={`Portrait of ${name}`}
-				className={`${sizeClasses[size]} object-cover relative z-10`}
+				className={`${sizeClasses[size]} object-cover relative z-10 ${
+					size === "fullscreen" ? "object-center" : ""
+				}`}
 				style={{
 					backfaceVisibility: "hidden",
 					WebkitBackfaceVisibility: "hidden",
 				}}
 			/>
-			<div className="absolute bottom-0 left-0 right-0 text-white text-center p-4 z-30">
-				<p>Beta: {debugValues.beta}</p>
-				<p>Gamma: {debugValues.gamma}</p>
-			</div>
+
+			{/* Debug values - only show for non-fullscreen */}
+			{size !== "fullscreen" && (
+				<div className="absolute bottom-0 left-0 right-0 text-white text-center p-4 z-30">
+					<p>Beta: {debugValues.beta}</p>
+					<p>Gamma: {debugValues.gamma}</p>
+				</div>
+			)}
+
 			{/* Glare/Shine Effect */}
 			{showGlare && (
 				<motion.div
 					className="absolute inset-0 pointer-events-none z-20"
 					animate={{
-						background: `radial-gradient(farthest-side circle at ${transform.glareX}% ${transform.glareY}%, hsla(0, 0%, 100%, 0.8) 10%,
-									hsla(0, 0%, 100%, 0.65) 20%,
-									hsla(0, 0%, 0%, 0.5) 90%)`,
+						background: `radial-gradient(farthest-side circle at ${transform.glareX}% ${transform.glareY}%, hsla(0, 0%, 100%, 0.8) 10%, hsla(0, 0%, 100%, 0.5) 20%, hsla(0, 0%, 0%, 0.75) 90% )`,
 						opacity: transform.glareOpacity,
 					}}
 					transition={{
@@ -132,6 +144,7 @@ export function Portrait({
 					}}
 					style={{
 						mixBlendMode: "overlay",
+						filter: "brightness(0.7) contrast(1.5)",
 					}}
 				/>
 			)}
